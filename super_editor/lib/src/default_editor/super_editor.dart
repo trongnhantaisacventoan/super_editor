@@ -236,7 +236,8 @@ class SuperEditor extends StatefulWidget {
   /// If no clipper factory method is provided, then the overlay controls
   /// will be allowed to appear anywhere in the overlay in which they sit
   /// (probably the entire screen).
-  final CustomClipper<Rect> Function(BuildContext overlayContext)? createOverlayControlsClipper;
+  final CustomClipper<Rect> Function(BuildContext overlayContext)?
+      createOverlayControlsClipper;
 
   /// Contains a [Document] and alters that document as desired.
   final DocumentEditor editor;
@@ -277,7 +278,8 @@ class SuperEditorState extends State<SuperEditor> {
   late GlobalKey _docLayoutKey;
   SingleColumnLayoutPresenter? _docLayoutPresenter;
   late SingleColumnStylesheetStyler _docStylesheetStyler;
-  late SingleColumnLayoutCustomComponentStyler _docLayoutPerComponentBlockStyler;
+  late SingleColumnLayoutCustomComponentStyler
+      _docLayoutPerComponentBlockStyler;
   late SingleColumnLayoutSelectionStyler _docLayoutSelectionStyler;
 
   late FocusNode _focusNode;
@@ -334,7 +336,8 @@ class SuperEditorState extends State<SuperEditor> {
     }
 
     if (widget.focusNode != oldWidget.focusNode) {
-      _focusNode = (widget.focusNode ?? FocusNode())..addListener(_onFocusChange);
+      _focusNode = (widget.focusNode ?? FocusNode())
+        ..addListener(_onFocusChange);
     }
 
     if (widget.documentLayoutKey != oldWidget.documentLayoutKey) {
@@ -382,7 +385,8 @@ class SuperEditorState extends State<SuperEditor> {
       commonOps: CommonEditorOperations(
         editor: widget.editor,
         composer: _composer,
-        documentLayoutResolver: () => _docLayoutKey.currentState as DocumentLayout,
+        documentLayoutResolver: () =>
+            _docLayoutKey.currentState as DocumentLayout,
       ),
     );
 
@@ -399,9 +403,11 @@ class SuperEditorState extends State<SuperEditor> {
 
     final document = editContext.editor.document;
 
-    _docStylesheetStyler = SingleColumnStylesheetStyler(stylesheet: widget.stylesheet);
+    _docStylesheetStyler =
+        SingleColumnStylesheetStyler(stylesheet: widget.stylesheet);
 
-    _docLayoutPerComponentBlockStyler = SingleColumnLayoutCustomComponentStyler();
+    _docLayoutPerComponentBlockStyler =
+        SingleColumnLayoutCustomComponentStyler();
 
     _docLayoutSelectionStyler = SingleColumnLayoutSelectionStyler(
       document: document,
@@ -430,7 +436,8 @@ class SuperEditorState extends State<SuperEditor> {
   }
 
   void _recomputeIfLayoutShouldShowCaret() {
-    _docLayoutSelectionStyler.shouldDocumentShowCaret = _focusNode.hasFocus && gestureMode == DocumentGestureMode.mouse;
+    _docLayoutSelectionStyler.shouldDocumentShowCaret =
+        _focusNode.hasFocus && gestureMode == DocumentGestureMode.mouse;
   }
 
   void _updateComposerPreferencesAtSelection() {
@@ -445,8 +452,10 @@ class SuperEditorState extends State<SuperEditor> {
         _previousSelectionExtent!.nodePosition is TextNodePosition) {
       // The current and previous selections are text positions. Check for the situation where the two
       // selections are functionally equivalent, but the affinity changed.
-      final selectedNodePosition = selectionExtent.nodePosition as TextNodePosition;
-      final previousSelectedNodePosition = _previousSelectionExtent!.nodePosition as TextNodePosition;
+      final selectedNodePosition =
+          selectionExtent.nodePosition as TextNodePosition;
+      final previousSelectedNodePosition =
+          _previousSelectionExtent!.nodePosition as TextNodePosition;
 
       if (selectionExtent.nodeId == _previousSelectionExtent!.nodeId &&
           selectedNodePosition.offset == previousSelectedNodePosition.offset) {
@@ -464,14 +473,26 @@ class SuperEditorState extends State<SuperEditor> {
       return;
     }
 
-    final node = widget.editor.document.getNodeById(_composer.selection!.extent.nodeId);
+    final node =
+        widget.editor.document.getNodeById(_composer.selection!.extent.nodeId);
     if (node is! TextNode) {
       return;
     }
 
-    final textPosition = _composer.selection!.extent.nodePosition as TextPosition;
+    final textPosition =
+        _composer.selection!.extent.nodePosition as TextPosition;
 
     if (textPosition.offset == 0 && node.text.text.isEmpty) {
+      // keep inline only begin of node
+      final nodeBefore = widget.editor.document.getNodeBefore(node);
+      if (nodeBefore is TextNode) {
+        Set<Attribution> beforeAllAttributions = nodeBefore.text
+            .getAllAttributionsAt(nodeBefore.endPosition.offset - 1);
+        final newStyles = beforeAllAttributions
+            .where((attribution) => attribution is! LinkAttribution)
+            .toSet();
+        _composer.preferences.addStyles(newStyles);
+      }
       return;
     }
 
@@ -486,18 +507,23 @@ class SuperEditorState extends State<SuperEditor> {
       currentAttributionsOffset = textPosition.offset - 1;
     }
 
-    Set<Attribution> allAttributions = node.text.getAllAttributionsAt(currentAttributionsOffset);
+    Set<Attribution> allAttributions =
+        node.text.getAllAttributionsAt(currentAttributionsOffset);
 
     // TODO: attribution expansion policy should probably be configurable
 
     // Add non-link attributions.
-    final newStyles = allAttributions.where((attribution) => attribution is! LinkAttribution).toSet();
+    final newStyles = allAttributions
+        .where((attribution) => attribution is! LinkAttribution)
+        .toSet();
 
     // Add a link attribution only if the selection sits at the middle of the link.
     // As we are dealing with a collapsed selection, we shouldn't have more than one link.
-    final linkAttribution = allAttributions.firstWhereOrNull((attribution) => attribution is LinkAttribution);
+    final linkAttribution = allAttributions
+        .firstWhereOrNull((attribution) => attribution is LinkAttribution);
     if (linkAttribution != null) {
-      final range = node.text.getAttributedRange({linkAttribution}, currentAttributionsOffset);
+      final range = node.text
+          .getAttributedRange({linkAttribution}, currentAttributionsOffset);
 
       if (textPosition.offset > 0 &&
           currentAttributionsOffset >= range.start &&
@@ -551,9 +577,12 @@ class SuperEditorState extends State<SuperEditor> {
         selection: _composer.selectionNotifier,
         isDocumentLayoutAvailable: () => _docLayoutKey.currentContext != null,
         getDocumentLayout: () => editContext.documentLayout,
-        placeCaretAtEndOfDocumentOnGainFocus: widget.selectionPolicies.placeCaretAtEndOfDocumentOnGainFocus,
-        restorePreviousSelectionOnGainFocus: widget.selectionPolicies.restorePreviousSelectionOnGainFocus,
-        clearSelectionWhenEditorLosesFocus: widget.selectionPolicies.clearSelectionWhenEditorLosesFocus,
+        placeCaretAtEndOfDocumentOnGainFocus:
+            widget.selectionPolicies.placeCaretAtEndOfDocumentOnGainFocus,
+        restorePreviousSelectionOnGainFocus:
+            widget.selectionPolicies.restorePreviousSelectionOnGainFocus,
+        clearSelectionWhenEditorLosesFocus:
+            widget.selectionPolicies.clearSelectionWhenEditorLosesFocus,
         child: _buildInputSystem(
           child: _buildGestureSystem(
             documentLayout: _buildDocumentLayout(),
@@ -582,7 +611,8 @@ class SuperEditorState extends State<SuperEditor> {
           focusNode: _focusNode,
           autofocus: widget.autofocus,
           editContext: editContext,
-          clearSelectionWhenImeConnectionCloses: widget.selectionPolicies.clearSelectionWhenImeConnectionCloses,
+          clearSelectionWhenImeConnectionCloses:
+              widget.selectionPolicies.clearSelectionWhenImeConnectionCloses,
           softwareKeyboardController: widget.softwareKeyboardController,
           imePolicies: widget.imePolicies,
           imeConfiguration: widget.imeConfiguration,
@@ -612,8 +642,10 @@ class SuperEditorState extends State<SuperEditor> {
           contentTapHandler: _contentTapDelegate,
           scrollController: widget.scrollController,
           documentKey: _docLayoutKey,
-          handleColor: widget.androidHandleColor ?? Theme.of(context).primaryColor,
-          popoverToolbarBuilder: widget.androidToolbarBuilder ?? (_) => const SizedBox(),
+          handleColor:
+              widget.androidHandleColor ?? Theme.of(context).primaryColor,
+          popoverToolbarBuilder:
+              widget.androidToolbarBuilder ?? (_) => const SizedBox(),
           createOverlayControlsClipper: widget.createOverlayControlsClipper,
           overlayController: widget.overlayController,
           showDebugPaint: widget.debugPaint.gestures,
@@ -629,7 +661,8 @@ class SuperEditorState extends State<SuperEditor> {
           scrollController: widget.scrollController,
           documentKey: _docLayoutKey,
           handleColor: widget.iOSHandleColor ?? Theme.of(context).primaryColor,
-          popoverToolbarBuilder: widget.iOSToolbarBuilder ?? (_) => const SizedBox(),
+          popoverToolbarBuilder:
+              widget.iOSToolbarBuilder ?? (_) => const SizedBox(),
           floatingCursorController: _floatingCursorController,
           createOverlayControlsClipper: widget.createOverlayControlsClipper,
           overlayController: widget.overlayController,
@@ -655,8 +688,12 @@ class SuperEditorState extends State<SuperEditor> {
               // have to explicitly tell the gesture area to be at least as tall
               // as the viewport (in case the document content is shorter than
               // the viewport).
-              minWidth: viewportConstraints.maxWidth < double.infinity ? viewportConstraints.maxWidth : 0,
-              minHeight: viewportConstraints.maxHeight < double.infinity ? viewportConstraints.maxHeight : 0,
+              minWidth: viewportConstraints.maxWidth < double.infinity
+                  ? viewportConstraints.maxWidth
+                  : 0,
+              minHeight: viewportConstraints.maxHeight < double.infinity
+                  ? viewportConstraints.maxHeight
+                  : 0,
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -771,10 +808,14 @@ class SuperEditorSelectionPolicies {
       identical(this, other) ||
       other is SuperEditorSelectionPolicies &&
           runtimeType == other.runtimeType &&
-          placeCaretAtEndOfDocumentOnGainFocus == other.placeCaretAtEndOfDocumentOnGainFocus &&
-          restorePreviousSelectionOnGainFocus == other.restorePreviousSelectionOnGainFocus &&
-          clearSelectionWhenEditorLosesFocus == other.clearSelectionWhenEditorLosesFocus &&
-          clearSelectionWhenImeConnectionCloses == other.clearSelectionWhenImeConnectionCloses;
+          placeCaretAtEndOfDocumentOnGainFocus ==
+              other.placeCaretAtEndOfDocumentOnGainFocus &&
+          restorePreviousSelectionOnGainFocus ==
+              other.restorePreviousSelectionOnGainFocus &&
+          clearSelectionWhenEditorLosesFocus ==
+              other.clearSelectionWhenEditorLosesFocus &&
+          clearSelectionWhenImeConnectionCloses ==
+              other.clearSelectionWhenImeConnectionCloses;
 
   @override
   int get hashCode =>
@@ -795,10 +836,12 @@ abstract class DocumentLayerBuilder {
 class FunctionalDocumentLayerBuilder implements DocumentLayerBuilder {
   const FunctionalDocumentLayerBuilder(this._delegate);
 
-  final Widget Function(BuildContext context, EditContext editContext) _delegate;
+  final Widget Function(BuildContext context, EditContext editContext)
+      _delegate;
 
   @override
-  Widget build(BuildContext context, EditContext editContext) => _delegate(context, editContext);
+  Widget build(BuildContext context, EditContext editContext) =>
+      _delegate(context, editContext);
 }
 
 /// A [DocumentLayerBuilder] that paints a caret at the primary selection extent
@@ -1020,7 +1063,8 @@ final defaultStylesheet = Stylesheet(
   inlineTextStyler: defaultInlineTextStyler,
 );
 
-TextStyle defaultInlineTextStyler(Set<Attribution> attributions, TextStyle existingStyle) {
+TextStyle defaultInlineTextStyler(
+    Set<Attribution> attributions, TextStyle existingStyle) {
   return existingStyle.merge(defaultStyleBuilder(attributions));
 }
 
@@ -1041,13 +1085,15 @@ TextStyle defaultStyleBuilder(Set<Attribution> attributions) {
       newStyle = newStyle.copyWith(
         decoration: newStyle.decoration == null
             ? TextDecoration.underline
-            : TextDecoration.combine([TextDecoration.underline, newStyle.decoration!]),
+            : TextDecoration.combine(
+                [TextDecoration.underline, newStyle.decoration!]),
       );
     } else if (attribution == strikethroughAttribution) {
       newStyle = newStyle.copyWith(
         decoration: newStyle.decoration == null
             ? TextDecoration.lineThrough
-            : TextDecoration.combine([TextDecoration.lineThrough, newStyle.decoration!]),
+            : TextDecoration.combine(
+                [TextDecoration.lineThrough, newStyle.decoration!]),
       );
     } else if (attribution is LinkAttribution) {
       newStyle = newStyle.copyWith(
@@ -1124,12 +1170,13 @@ class LaunchLinkTapHandler extends ContentTapDelegate {
 
     final textNode = document.getNodeById(position.nodeId);
     if (textNode is! TextNode) {
-      editorGesturesLog
-          .shout("Received a report of a tap on a TextNodePosition, but the node with that ID is a: $textNode");
+      editorGesturesLog.shout(
+          "Received a report of a tap on a TextNodePosition, but the node with that ID is a: $textNode");
       return null;
     }
 
-    final tappedAttributions = textNode.text.getAllAttributionsAt(nodePosition.offset);
+    final tappedAttributions =
+        textNode.text.getAllAttributionsAt(nodePosition.offset);
     for (final tappedAttribution in tappedAttributions) {
       if (tappedAttribution is LinkAttribution) {
         return tappedAttribution.url;
